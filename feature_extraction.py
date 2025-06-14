@@ -13,9 +13,12 @@ from imblearn.over_sampling import RandomOverSampler
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def extract_url_features(url):
+def extract_url_features(row):
     """從 URL 中提取特徵"""
     try:
+        url = row['url']
+        label = row['label']
+
         # 確保 URL 有 scheme
         if not url.startswith(('http://', 'https://')):
             url = 'http://' + url
@@ -49,22 +52,34 @@ def extract_url_features(url):
         sensitive_words = ['admin', 'login', 'wp-content', 'include', 'shell', 'passwd', 'wp-', 'config']
         path_has_any_sensitive_words = int(any(word in path.lower() for word in sensitive_words))
         
+        # return {
+        #     'url': url,
+        #     'url_netloc_len': url_netloc_len,
+        #     'url_path_len': url_path_len,
+        #     'url_count_dot': url_count_dot,
+        #     'url_count_hyphen': url_count_hyphen,
+        #     'domain_len': domain_len,
+        #     'subdomain_count_dot': subdomain_count_dot,
+        #     'tld_len': tld_len,
+        #     'domain_count_hyphen': domain_count_hyphen,
+        #     'domain_count_digit': domain_count_digit,
+        #     'path_len': path_len,
+        #     'path_count_no_of_dir': path_count_no_of_dir,
+        #     'path_count_zero': path_count_zero,
+        #     'path_count_lower': path_count_lower,
+        #     'path_has_any_sensitive_words': path_has_any_sensitive_words
+        # }
         return {
             'url': url,
-            'url_netloc_len': url_netloc_len,
             'url_path_len': url_path_len,
             'url_count_dot': url_count_dot,
             'url_count_hyphen': url_count_hyphen,
-            'domain_len': domain_len,
-            'subdomain_count_dot': subdomain_count_dot,
-            'tld_len': tld_len,
-            'domain_count_hyphen': domain_count_hyphen,
-            'domain_count_digit': domain_count_digit,
             'path_len': path_len,
             'path_count_no_of_dir': path_count_no_of_dir,
             'path_count_zero': path_count_zero,
             'path_count_lower': path_count_lower,
-            'path_has_any_sensitive_words': path_has_any_sensitive_words
+            'path_has_any_sensitive_words': path_has_any_sensitive_words,
+            'label': label
         }
     except Exception as e:
         logger.error(f"處理 URL 時出錯: {url}, 錯誤: {str(e)}")
@@ -87,8 +102,9 @@ def process_file(input_file, output_file, is_train=False):
         
         # 提取特徵
         features = []
-        for url in tqdm(df['url'], desc="提取特徵"):
-            feature = extract_url_features(url)
+        for idx, _ in enumerate(tqdm(df['url'], desc="提取特徵")):
+            row = df.iloc[idx]
+            feature = extract_url_features(row)
             if feature:
                 features.append(feature)
         
@@ -98,17 +114,7 @@ def process_file(input_file, output_file, is_train=False):
         # 轉換為 DataFrame
         feature_df = pd.DataFrame(features)
         logger.info(f"提取特徵數量: {len(feature_df.columns)}")
-        
-        # 合併原始標籤（如果存在）
-        if 'label' in df.columns:
-            feature_df = pd.merge(
-                feature_df,
-                df[['url', 'label']],
-                on='url',
-                how='left'
-            )
-            logger.info(f"合併標籤後特徵數量: {len(feature_df.columns)}")
-        
+
         # 保存結果
         feature_df.to_csv(output_file, index=False)
         logger.info(f"特徵提取完成，已保存至: {output_file}")

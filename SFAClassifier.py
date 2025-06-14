@@ -88,7 +88,7 @@ class SFAClassifier:
     def get_categories(self):
         return self.categories
 
-    def run_optimization(self, X_train, y_train, X_test, y_test, categories):
+    def run_optimization(self, X_train, y_train, X_test, y_test, categories, n_trials):
         """
         Optimize hyperparameters using optuna:
         @inproceedings{akiba2019optuna,
@@ -110,7 +110,7 @@ class SFAClassifier:
         self.set_test_data(X_test, y_test)
         self.set_categories(categories)
         study = optuna.create_study(direction="maximize")
-        study.optimize(self.objective, n_trials=15)
+        study.optimize(self.objective, n_trials=n_trials)
         num_trials = len(study.trials)
         best_trial = study.best_trial
         return num_trials, best_trial

@@ -217,7 +217,8 @@ def train_model(args):
                 y_train=y_train_s,
                 X_test=X_val_df if X_val_df is not None else X_train_df,
                 y_test=y_val_s if y_val_s is not None else y_train_s,
-                categories=categories
+                categories=categories,
+                n_trials=args.n_trials
             )
             
             best_params = best_trial.params if hasattr(best_trial, 'params') else {}
