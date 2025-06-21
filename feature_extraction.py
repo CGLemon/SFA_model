@@ -52,28 +52,17 @@ def extract_url_features(row):
         sensitive_words = ['admin', 'login', 'wp-content', 'include', 'shell', 'passwd', 'wp-', 'config']
         path_has_any_sensitive_words = int(any(word in path.lower() for word in sensitive_words))
         
-        # return {
-        #     'url': url,
-        #     'url_netloc_len': url_netloc_len,
-        #     'url_path_len': url_path_len,
-        #     'url_count_dot': url_count_dot,
-        #     'url_count_hyphen': url_count_hyphen,
-        #     'domain_len': domain_len,
-        #     'subdomain_count_dot': subdomain_count_dot,
-        #     'tld_len': tld_len,
-        #     'domain_count_hyphen': domain_count_hyphen,
-        #     'domain_count_digit': domain_count_digit,
-        #     'path_len': path_len,
-        #     'path_count_no_of_dir': path_count_no_of_dir,
-        #     'path_count_zero': path_count_zero,
-        #     'path_count_lower': path_count_lower,
-        #     'path_has_any_sensitive_words': path_has_any_sensitive_words
-        # }
         return {
             'url': url,
+            'url_netloc_len': url_netloc_len,
             'url_path_len': url_path_len,
             'url_count_dot': url_count_dot,
             'url_count_hyphen': url_count_hyphen,
+            'domain_len': domain_len,
+            'subdomain_count_dot': subdomain_count_dot,
+            'tld_len': tld_len,
+            'domain_count_hyphen': domain_count_hyphen,
+            'domain_count_digit': domain_count_digit,
             'path_len': path_len,
             'path_count_no_of_dir': path_count_no_of_dir,
             'path_count_zero': path_count_zero,
@@ -85,13 +74,22 @@ def extract_url_features(row):
         logger.error(f"處理 URL 時出錯: {url}, 錯誤: {str(e)}")
         return None
 
-def process_file(input_file, output_file, is_train=False):
+def process_file(input_files, output_file, max_samples_per_files):
     """處理輸入文件並提取特徵"""
-    logger.info(f"正在處理檔案: {input_file}")
+    logger.info(f"正在處理檔案: {input_files}")
     
     # 讀取數據
     try:
-        df = pd.read_csv(input_file)
+        df_list = list()
+        for filename in input_files:
+            df = pd.read_csv(filename)
+            rows, _ = df.shape
+            if max_samples_per_files is not None and \
+                max_samples_per_files < rows:
+                df = df.sample(n=max_samples_per_files)
+            df_list.append(df)
+        df = pd.concat(df_list)
+
         logger.info(f"原始數據形狀: {df.shape}")
         
         # 確保有 url 列
@@ -113,7 +111,10 @@ def process_file(input_file, output_file, is_train=False):
             
         # 轉換為 DataFrame
         feature_df = pd.DataFrame(features)
-        logger.info(f"提取特徵數量: {len(feature_df.columns)}")
+
+        rows, columns = df.shape
+        logger.info(f"提取特徵數量: {columns}")
+        logger.info(f"保存欄位數量: {rows}")
 
         # 保存結果
         feature_df.to_csv(output_file, index=False)
@@ -127,20 +128,17 @@ def process_file(input_file, output_file, is_train=False):
 
 def main():
     parser = argparse.ArgumentParser(description='URL 特徵提取工具')
-    parser.add_argument('--input', type=str, required=True, help='輸入文件路徑')
-    parser.add_argument('--output', type=str, required=True, help='輸出文件路徑')
-    parser.add_argument('--train', action='store_true', help='是否為訓練模式')
-    
+    parser.add_argument('-i', '--input', type=str, nargs='+', required=True, metavar='<PATH>', help='輸入文件路徑')
+    parser.add_argument('-o', '--output', type=str, required=True, metavar='<PATH>', help='輸出文件路徑')
+    parser.add_argument('--max-samples-per-files', type=int, metavar='<INT>', help='從每個 CSV 文件抽出最多 K 筆資料')
     args = parser.parse_args()
     
     try:
-        process_file(args.input, args.output, args.train)
+        process_file(args.input, args.output, args.max_samples_per_files)
     except Exception as e:
         logger.error(f"程序執行出錯: {str(e)}")
         return 1
-        
     return 0
 
 if __name__ == "__main__":
     main()
-    
