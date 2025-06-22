@@ -16,7 +16,19 @@
 
 ### 2. 準備資料集
 
-專案使用的訓練資料集來自 [Kaggle](https://www.kaggle.com/datasets/pilarpieiro/tabular-dataset-ready-for-malicious-url-detection)，該資料集總共包含 1,682,213 筆資料 ，分別為 ```train_dataset.csv``` 和 ```test_dataset.csv```，請下載後解壓縮到本目錄上。
+專案使用的訓練資料集來自 [Kaggle](https://www.kaggle.com/datasets/pilarpieiro/tabular-dataset-ready-for-malicious-url-detection)，該資料集總共包含 8,411,061 筆資料 ，請下載後解壓縮到本目錄上。它們分別為 ：
+
+* ```train_dataset.csv``` ：6,728,848 筆資料
+* ```test_dataset.csv```：1,682,213 筆資料
+
+如果想使用自己的資料，請保資料內要包含兩個標籤，分別為 ```url``` 和 ```label```，其中 ```url``` 為當前網址，```label``` 為異常標籤，0 代表無異常，1 代表異常。
+
+### 3. 使用 Parquest 資料
+
+專案支援從 Parquest 檔案抽取資料，並且可以避免抽取相同或過多相似的 URL，例如從中抽取 5000 筆資料並存放到 parquest.csv 裡
+
+
+    python3 sample_parquest.py ---input-path path/to/parquest --output-path parquest.csv --maxsize 5000
 
 
 ## 使用方式
@@ -28,6 +40,11 @@
 
     python3 feature_extraction.py --input train_dataset.csv --output train_features.csv
     python3 feature_extraction.py --input test_dataset.csv --output test_features.csv
+
+
+如果要一次性提取多個文件的特徵，則一次性輸入多個 CSV 文件即可
+
+    python3 feature_extraction.py --input train_dataset_1.csv train_dataset_2.csv --output train_features.csv
 
 ### 2. 訓練模型
 
