@@ -359,8 +359,8 @@ def predict(args):
             cm = confusion_matrix(y_test, results_df['prediction'])
             cm_df = pd.DataFrame(
                 cm,
-                index=["實際:負類 (0)", "實際:正類 (1)"],
-                columns=["預測:負類 (0)", "預測:正類 (1)"]
+                index=["實際:正常 (0)", "實際:異常 (1)"],
+                columns=["預測:正常 (0)", "預測:異常 (1)"]
             )
             logger.info("\n混淆矩陣：\n" + str(cm_df))
         else:
