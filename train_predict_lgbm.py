@@ -9,7 +9,7 @@ import joblib
 from tqdm import tqdm
 from pathlib import Path
 from SFALGBMClassifier import SFALGBMClassifier
-from sklearn.metrics import accuracy_score, roc_auc_score, f1_score
+from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, confusion_matrix, fbeta_score
 
 # 設置日誌
 def setup_logging(debug=False):
@@ -348,10 +348,21 @@ def predict(args):
             test_auc = roc_auc_score(y_test, test_preds_pos)
             test_acc = accuracy_score(y_test, results_df['prediction'])
             test_f1 = f1_score(y_test, results_df['prediction'])
+            test_fbeta = fbeta_score(y_test, results_df['prediction'], beta=0.5)
             
             logger.info(f"測試集AUC: {test_auc:.4f}")
             logger.info(f"測試集準確率: {test_acc:.4f}")
             logger.info(f"測試集F1分數: {test_f1:.4f}")
+            logger.info(f"測試集F0.5分數: {test_fbeta:.4f}")
+
+            # 混淆矩陣
+            cm = confusion_matrix(y_test, results_df['prediction'])
+            cm_df = pd.DataFrame(
+                cm,
+                index=["實際:負類 (0)", "實際:正類 (1)"],
+                columns=["預測:負類 (0)", "預測:正類 (1)"]
+            )
+            logger.info("\n混淆矩陣：\n" + str(cm_df))
         else:
             logger.info("未找到有效的真實標籤，跳過測試集評估")
     
